@@ -1,4 +1,6 @@
 #include "ThpracImGui.hpp"
+#include "PurpleRuntime.hpp"
+#include "PurpleLabels.hpp"
 
 #ifdef TH_ENABLE_THPRAC
 
@@ -284,6 +286,12 @@ bool BuildLocaleFont(ImGuiIO &io, Locale locale)
     else if (locale == Locale::JaJP)
         glyphRange = io.Fonts->GetGlyphRangesJapanese();
     const std::string fontPath = FileSystem::GetBasePath("unifont.otf");
+    ImFontGlyphRangesBuilder purpleGlyphs;
+    purpleGlyphs.AddRanges(glyphRange);
+    PracticeRuntime::AddPurpleGlyphs(purpleGlyphs, static_cast<int>(locale));
+    ImVector<ImWchar> completeRanges;
+    purpleGlyphs.BuildRanges(&completeRanges);
+    glyphRange = completeRanges.Data;
     io.FontDefault = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f, &config, glyphRange);
     if (io.FontDefault == nullptr)
         return false;
@@ -300,6 +308,7 @@ bool BuildLocaleFont(ImGuiIO &io, Locale locale)
 
 void ApplyGameInput()
 {
+    PracticeRuntime::Purple::FeedUiInput(g_GameButtons);
     ImGuiIO &io = ImGui::GetIO();
     io.NavInputs[ImGuiNavInput_DpadUp] = g_GameNavEnabled && (g_GameButtons & TH_BUTTON_UP) != 0 ? 1.0f : 0.0f;
     io.NavInputs[ImGuiNavInput_DpadDown] = g_GameNavEnabled && (g_GameButtons & TH_BUTTON_DOWN) != 0 ? 1.0f : 0.0f;
@@ -454,6 +463,7 @@ void Shutdown()
 {
     if (!g_Initialized)
         return;
+    PracticeRuntime::Purple::ReleaseTextures();
     if (g_FrameOpen)
     {
         ImGui::EndFrame();
