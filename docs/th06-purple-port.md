@@ -1,6 +1,6 @@
-# TH06 purple migration — experiment, not promoted
+# TH06 purple migration — integrated into eagler
 
-Base: `fa4d48f`, `experiment/mobile-thprac-panels` worktree. Existing mobile
+Implementation base: `fa4d48f`, `experiment/mobile-thprac-panels` worktree. Existing mobile
 panel changes are preserved. Purple source authority is
 `thprac/src/thprac/thprac_th06.cpp`; the generator checks the normalized,
 BOM-stripped SHA256 `114a55f6c321a83acf2dea28c29893dd2821a25b1088bdb8683bbc5918d9bb81`.
@@ -91,7 +91,8 @@ also contains stb_vorbis C). Current SDK requires Safari minimum 15.
 Verification lanes: generator/source checks, shared executable input/APS/CSV
 test, full THPrac ON and OFF builds, and headless browser lifecycle / visual
 checks. Retail Replay golden and actual phone checks remain pending lanes.
-Nothing has been promoted, committed, pushed or deployed for this migration.
+The dated verification records below describe the isolated migration before
+promotion; they are historical evidence, not the current branch status.
 
 Recorded 2026-10-10: full ON and OFF Web builds passed; source gates and
 executable shared input/APS/CSV test passed; common Release suite passed 34/34.
@@ -142,3 +143,13 @@ python scripts/check-purple-browser.py --pack <th06-offline-game-directory> --fo
 
 Final whitespace checks passed. Changes remain in this experiment worktree;
 no commit, push, canonical promotion or deployment was performed.
+
+## Eagler integration, 2026-10-12
+
+The canonical `eagler` branch now includes the complete source-owned migration
+through `3397c35`, including shared purple practice and mobile panel owners.
+The integration preserves the SDL repair and pins eagler-common to `52bc86f`.
+The historical experiment and browser verification records above remain valid
+only within their stated coverage. Promotion does not establish exhaustive
+retail Replay equivalence or physical-phone verification. No deployment is
+part of this branch-integration task.
