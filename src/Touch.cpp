@@ -568,6 +568,9 @@ void Touch::SetReplayUsageState(bool usedThisRun, bool bombedWithTouch, bool che
 
 void Touch::CancelTouches()
 {
+#ifdef TH_ENABLE_THPRAC
+    ThpracImGui::CancelLogicalPointers();
+#endif
     if (HasReplayRecordFinger())
     {
         ReplayExtension::CaptureTouchCancelAll();
@@ -595,6 +598,9 @@ void Touch::CancelTouches()
 
 void Touch::FingerDown(const SDL_TouchFingerEvent &f)
 {
+#ifdef TH_ENABLE_THPRAC
+    if (ThpracImGui::RouteTouchPointer(0,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+#endif
     if (!EaglerOptions::TouchEnabled())
     {
         return;
@@ -728,6 +734,9 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
 
 void Touch::FingerUp(const SDL_TouchFingerEvent &f)
 {
+#ifdef TH_ENABLE_THPRAC
+    if (ThpracImGui::RouteTouchPointer(f.type == SDL_EVENT_FINGER_CANCELED ? 3 : 2,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+#endif
     if (!EaglerOptions::TouchEnabled())
     {
         // Never leave a latched gameplay role behind merely because touch was
@@ -777,6 +786,9 @@ void Touch::FingerUp(const SDL_TouchFingerEvent &f)
 
 void Touch::FingerMotion(const SDL_TouchFingerEvent &f)
 {
+#ifdef TH_ENABLE_THPRAC
+    if (ThpracImGui::RouteTouchPointer(1,f.fingerID,f.x,f.y,f.touchID == -1)) return;
+#endif
     if (!EaglerOptions::TouchEnabled())
     {
         return;
@@ -1213,13 +1225,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id, f32 x, f32 y)
         return;
     }
 
-    if (PracticeRuntime::CapturesGameInput())
-    {
-#ifdef TH_ENABLE_THPRAC
-        ThpracImGui::ProcessLogicalPointer(1, x * 640.0f, y * 480.0f);
-#endif
-    }
     SDL_TouchFingerEvent event = {};
+    event.touchID = -1;
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
     event.y = y;
@@ -1228,13 +1235,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id, f32 x, f32 y)
 
 extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchMotion(i32 id, f32 x, f32 y)
 {
-    if (PracticeRuntime::CapturesGameInput())
-    {
-#ifdef TH_ENABLE_THPRAC
-        ThpracImGui::ProcessLogicalPointer(0, x * 640.0f, y * 480.0f);
-#endif
-    }
     SDL_TouchFingerEvent event = {};
+    event.touchID = -1;
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
     event.y = y;
@@ -1243,13 +1245,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchMotion(i32 id, f32 x, f32 y)
 
 extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchUp(i32 id, f32 x, f32 y)
 {
-    if (PracticeRuntime::CapturesGameInput())
-    {
-#ifdef TH_ENABLE_THPRAC
-        ThpracImGui::ProcessLogicalPointer(2, x * 640.0f, y * 480.0f);
-#endif
-    }
     SDL_TouchFingerEvent event = {};
+    event.touchID = -1;
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
     event.y = y;
