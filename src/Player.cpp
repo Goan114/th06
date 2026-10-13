@@ -897,6 +897,10 @@ i32 GetPlayerAnmScript(const Player *player, i32 script)
 // misinterpreted by TH06.
 static void DrawEaglerHitbox(const Player *player, const ZunVec3 &center)
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() &&
+        player->initParam != MultiplayerGameplay::GetLocalPlayerSlot()) return;
+#endif
     constexpr i32 TEXTURE_SLOT = 63;
     constexpr i32 SPRITE_SLOT = 1900;
     static AnmVm vm;
