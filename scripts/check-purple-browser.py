@@ -5,20 +5,28 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 
 p=argparse.ArgumentParser()
-p.add_argument('--pack', required=True, type=Path)
+inputs=p.add_mutually_exclusive_group(required=True)
+inputs.add_argument('--pack', type=Path)
+inputs.add_argument('--assets', type=Path)
 p.add_argument('--font', required=True, type=Path)
 p.add_argument('--browser', default='C:/Program Files/Google/Chrome/Application/chrome.exe')
+p.add_argument('--build', type=Path)
 a=p.parse_args()
 root=Path(__file__).resolve().parent.parent
-build=root/'build-purple-thprac'
-source=(a.pack/'th06.js').read_text(encoding='utf-8')
-entries=re.findall(r'filename:"([^"]+)",start:(\d+),end:(\d+)',source[source.index('loadPackage({'):])
-blob=(a.pack/'th06.data').read_bytes()
+build=a.build or root/'build-web-pr-review-on'
 files={}
-for name,lo,hi in entries:
-    data=blob[int(lo):int(hi)]
-    suffix=re.search(r'(CM|ED|IN|MD|ST|TL)\.DAT$',name,re.I)
-    files['/紅魔郷'+suffix[1]+'.DAT' if suffix else name]=data
+if a.assets:
+    for name in ['紅魔郷CM.DAT','紅魔郷ED.DAT','紅魔郷IN.DAT','紅魔郷MD.DAT','紅魔郷ST.DAT','紅魔郷TL.DAT']:
+        files['/'+name]=(a.assets/name).read_bytes()
+else:
+    source=(a.pack/'th06.js').read_text(encoding='utf-8')
+    entries=re.findall(r'filename:"([^"]+)",start:(\d+),end:(\d+)',source[source.index('loadPackage({'):])
+    if not entries: raise ValueError('Pack has no readable asset inventory')
+    blob=(a.pack/'th06.data').read_bytes()
+    for name,lo,hi in entries:
+        data=blob[int(lo):int(hi)]
+        suffix=re.search(r'(CM|ED|IN|MD|ST|TL)\.DAT$',name,re.I)
+        files['/紅魔郷'+suffix[1]+'.DAT' if suffix else name]=data
 files['/unifont.otf']=a.font.read_bytes()
 files['/msgothic.ttc']=(a.font.parent/'msgothic.ttc').read_bytes()
 
@@ -69,7 +77,7 @@ try:
                 document.querySelector('iframe').contentWindow.postMessage({protocol:'eagler-touhou/1',game:'th06',epoch:1,request:id,...m},location.origin);
             })""",{'command':command,**fields})
         rpc('resources',resources=[{'url':name,'path':name} for name in files])
-        rpc('configure',music='none',resources=[],sharedResources=[],options={'thpracEnabled':True,'thpracLocale':'zh-CN','limitPresentationTo60':True})
+        rpc('configure',music='none',resources=[],sharedResources=[],options={'thpracEnabled':True,'thpracLocale':'zh-CN','touchEnabled':True,'limitPresentationTo60':True})
         rpc('launch')
         page.wait_for_timeout(3500)
         canvas=frame.locator('#canvas'); canvas.click()
@@ -102,7 +110,15 @@ try:
         rpc('touch-controls',fireEnabled=False,focusEnabled=False,bombSerial=0,escapeSerial=0,
             joystickX=0,joystickY=0,touchSensitivity=100,thpracMobilePanelsEnabled=True,thpracMobilePanelsVisible=True)
         page.wait_for_timeout(400);page.screenshot(path=str(out/'mobile-collapsed.png'))
-        click(65,23);click(18,64)
+        # The carrier path is independent of SDL's synthesized mouse stream.
+        def tap(x,y):
+            for event_type in ['down','up']:
+                page.evaluate("""message=>document.querySelector('iframe').contentWindow.postMessage({
+                    protocol:'eagler-touhou/1',game:'th06',epoch:1,command:'direct-touch',
+                    type:message.type,id:17,x:message.x,y:message.y
+                },location.origin)""",{'type':event_type,'x':x/640,'y':y/480})
+            page.wait_for_timeout(200)
+        tap(65,23);tap(18,64)
         page.screenshot(path=str(out/'mobile-checkbox.png'))
         assert not errors, errors
         assert not any('render loop exited' in e or 'initialization failed' in e for e in errors), errors
